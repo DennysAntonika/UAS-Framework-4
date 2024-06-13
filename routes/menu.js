@@ -8,7 +8,7 @@ const Model_Menu = require('../model/Model_Menu.js');
 const Model_Users = require('../model/Model_Users.js')
 const Model_Kategori = require('../model/Model_Kategori.js');
 const Model_Pembayaran = require('../model/Model_Pembayaran.js');
-const Model_outlet = require('../model/model_outlet.js');
+const Model_outlet = require('../model/Model_outlet.js');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -249,17 +249,29 @@ router.get('/users', async function (req, res, next) {
 router.get('/users/(:id)', async function (req, res, next) {
     try {
         // let level_users = req.session.level;
-        let id = req.params.id;
-        let id_users = req.session.userId;
-        let rows = await Model_Menu.getbyId(id);
-        let Data = await Model_Users.getId(id_users);
-        if (Data[0].level_users == "1") {
-            res.render('menu/users/detail', {
-                data: rows[0],
-                email: Data[0].email,
-                id_users: req.session.userId
-            })
+        let id = req.session.userId || null;
+        let level_users = req.session.level || null;
+        let email = 'Guest';
+        let bayar = [];
+        let Data = [];
+        let rows = await Model_Menu.getAll();
+        let kategori = await Model_Kategori.getAll();
+
+        if (id) {
+            Data = await Model_Users.getId(id);
+            email = (Data[0] && Data[0].email) ? Data[0].email : 'Guest';
+            bayar = await Model_Pembayaran.getId(id);
         }
+
+        res.render('menu/users/detail', {
+            data: rows,
+            email: email,
+            id_users: id,
+            data_pembayaran: bayar,
+            data_kategori: kategori,
+            data_users: Data
+        });
+        
     } catch {
         // req.flash('invalid', 'Anda harus login');
         // res.redirect('/login')
